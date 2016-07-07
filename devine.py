@@ -4,32 +4,49 @@ from acrcloud.recognizer import ACRCloudRecognizer
 
 class Devine:
 
-    def __init__(self,fichier):
-        self.fichier=fichier
+    def __init__(self, megafile):
+        self.megafile = megafile
 
-    def book_tag(self,param):
+    def book_tag(self, param):
 
         livre = 'https://www.goodreads.com/search.xml?key=bIlqMcaq64Bw2zLbZmYDXQ&q='
         link = livre+param
-        dict = ast.literal_eval(json.dumps(xmltodict.parse(requests.get(link).text)))
-        result=[]
-        for item in dict['GoodreadsResponse']['search']['results']['work']:
-            result.append((item['best_book']['title'],item['best_book']['author']['name']))
+        dic = ast.literal_eval(json.dumps(xmltodict.parse(requests.get(link).text)))
+        result = []
+        for item in dic['GoodreadsResponse']['search']['results']['work']:
+            result.append((item['best_book']['title'], item['best_book']['author']['name']))
         return result
 
-    def movie_tag(self,param):
+    def movie_tag(self, t=None, y=None):
 
-        end_url=[]
+        # t = title, y=year
         link = r'http://www.omdbapi.com/?'
-        dictionnaire = ast.literal_eval(param)
-        for item in dictionnaire.keys():
-            a = '&' + item + '=' + dictionnaire[item]
-            end_url.append(a)
-        link = link + ''.join(end_url)
-        result = requests.get(link).text
-        return result
+        if not y:
+            y = ''
+        if not t:
+            t = ''
 
-    def musique_tag(self):
+        link = link + '&t=' + t + '&y=' + y
+        dic1 = ast.literal_eval(requests.get(link).text)
+        if dic1['Response'] == 'True':
+            return dic1
+
+        else:
+            t = self.megafile.get_tag('title')
+            if t:
+                link = link + '&t=' + ''.join(t) + '&y=' + y
+                dic2 = ast.literal_eval(requests.get(link).text)
+                if dic2['Response'] == 'True':
+                    return dic2
+
+                else:
+                    t = self.megafile.get_name().split('.')[0:-1]
+                    link = link + '&t=' + ''.join(t) + '&y=' + y
+                    dic3 = ast.literal_eval(requests.get(link).text)
+                    if dic3['Response'] == 'False':
+                        return dic3
+
+    def music_print(self):
 
         # tag : artist, title, genre, album, label
 
@@ -46,41 +63,44 @@ class Devine:
             Video: mp4, mkv, wmv, flv, ts, avi ...'''
 
         re = ACRCloudRecognizer(config)
-        dict1 = ast.literal_eval(re.recognize_by_file(self.fichier.get_url(), 0))
+        dict1 = ast.literal_eval(re.recognize_by_file(self.megafile.get_url(), 0))
 
         if dict1['status']['msg'] == 'Success' and dict1['metadata'] and dict1['metadata']['music'][0]:
             return dict1
         else:
-            buf = open(self.fichier.get_url(), 'rb').read()
+            buf = open(self.megafile.get_url(), 'rb').read()
             dict2 = ast.literal_eval(re.recognize_by_filebuffer(buf, 0))
             if dict2['status']['msg'] == 'Success' and dict2['metadata'] and dict2['metadata']['music'][0]:
                 return dict2
 
+    def update_tag(self, dic, genre):
 
-    def update_tag(self,taglist,newtaglist):
+        if genre == 'music_print':
+            """tag:'artists', 'album', 'title', 'genres'"""
+            if dic:
+                c = dic['metadata']['music'][0]
+                for element in dic:
+                    try:
+                        tagvalue = c[element]
+                        liste1 = []
+                        if type(tagvalue) is list:
+                            for item in tagvalue:
+                                liste1.append(item['name'])
+                            newtag = '&'.join(liste1)
+                            self.megafile.change_tag(element, newtag)
+                        elif type(tagvalue) is str:
+                            self.megafile.change_tag(element, tagvalue)
+                        elif type(tagvalue) is dict:
+                            self.megafile.change_tag(element, tagvalue['name'])
+                    except KeyError:
+                        continue
 
-        for item in newtaglist.keys():
-            for element in taglist:
-                if item==element:
-                    self.fichier.change_tag(element,newtaglist[item])
-
-    def update_arc(self):
-        tag = ['artists', 'album', 'title', 'genres']
-        values = self.musique_tag()
-        if values:
-            c = values['metadata']['music'][0]
-            for element in tag:
-                try:
-                    tagvalue = c[element]
-                    liste1 = []
-                    if type(tagvalue) is list:
-                        for item in tagvalue:
-                            liste1.append(item['name'])
-                        newtag='&'.join(liste1)
-                        self.fichier.change_tag(element,newtag)
-                    elif type(tagvalue) is str:
-                        self.fichier.change_tag(element, tagvalue)
-                    elif type(tagvalue) is dict:
-                        self.fichier.change_tag(element, tagvalue['name'])
-                except KeyError:
-                    continue
+        if genre == 'movie':
+            if 'Genre' in dic.keys():
+                self.megafile.change_tag('genre',dic['Genre'])
+            if 'Title' in dic.keys():
+                self.megafile.change_tag('title',dic['Title'])
+            if 'Plot' in dic.keys():
+                print(dic['Plot'])
+            if 'Writer' in dic.keys():
+                print(dic['Writer'])

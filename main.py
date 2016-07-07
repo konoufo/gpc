@@ -1,242 +1,254 @@
-import os,re
+import os, re
 from finder import Finder
 from movefile import Movefile
 import time
-import sys,ast,json
+import sys, ast, json
 from devine import Devine
 
 
 def find():
 
-    url=''
-    profondeur=''
+    url = ''
+    deep = ''
     while not os.path.isdir(url):
-        print('Must be dir')
-        url=input('adresse du dossier:')
-    while profondeur != '1' and profondeur != '2':
+        print('Doit etre un dossier')
+        url = input('adresse du dossier:')
+    while deep != '1' and deep != '2':
         print('1 dossier et sous dossier ; 2 dossier')
-        profondeur=input('profondeur du dossier:')
+        deep = input('profondeur du dossier:')
 
-    return Finder(url).dig(profondeur)
+    return Finder(url).dig(deep)
 
-"""return activefiles"""
+"""return active_files"""
 
 
-def doublon(activefiles):
+def doublon(active_files):
+
     print('Looking for identical files')
-    listedoublon = []
-    for element in activefiles:
-        for element1 in activefiles:
+    result = []
+
+    for element in active_files:
+        for element1 in active_files:
             if element.get_url() != element1.get_url():
                 if element.get_extension() == element1.get_extension():
                     if element.get_tag('size') == element1.get_tag('size'):
-                        with open(element.get_url(),'rb') as text1:
-                            value1=text1.read(20)
-                        with open(element.get_url(),'rb') as text2:
+                        with open(element.get_url(), 'rb') as text1:
+                            value1 = text1.read(20)
+                        with open(element.get_url(), 'rb') as text2:
                             value2 = text2.read(20)
                         if value1 == value2:
                             if element.issame(element1.get_url()):
-                                listedoublon.append(element1)
-                                activefiles.remove(element1)
-                                print(element.get_url(),'=',element1.get_url())
-        if element in activefiles:
-            activefiles.remove(element)
+                                result.append(element1)
+                                active_files.remove(element1)
+                                print(element.get_url(), '=', element1.get_url())
+        if element in active_files:
+            active_files.remove(element)
 
-    print(len(listedoublon),'identical file(s)')
-    if len(listedoublon) > 0:
-        for element in listedoublon:
-            print(element.get_name())
-    return listedoublon
+    return result
 
 
-def byname(activefiles,value):
+def byname(active_files, value):
     text = value.lower()
     text = text.split(' ')
     text = '.*' + '.*'.join(text) + '.*'
-    result=[]
-    for element in activefiles:
+    result = []
+    for element in active_files:
         if re.match(text, element.get_name().lower()):
             result.append(element)
     return result
 
 
-def bysize(activefiles):
-    finallist = []
-    mini=int(input('Valeur minimale :'))
+def bysize(active_files):
+    result = []
+    mini = int(input('Valeur minimale :'))
     maxi = int(input('Valeur maximale:'))
-    for element in activefiles:
+    for element in active_files:
         if maxi > element.get_tag('size') > mini:
-            finallist.append(element)
-    return finallist
+            result.append(element)
+    return result
 
 
-def byattribute(activefiles):
-    finallist = []
-
-    attribute = input('attribute')
-    value = input('value')
-    for element in activefiles:
+def byattribute(active_files):
+    result = []
+    attribute = input('attribut')
+    value = input('valeur')
+    for element in active_files:
         if element.get_tag(attribute) == value:
-            finallist.append(element)
-    return finallist
+            result.append(element)
+    return result
 
-"""Change activefiles"""
+"""Change active_files"""
 
 
-def delete(activefiles):
-
-    for element in activefiles:
+def delete(active_files):
+    for element in active_files:
         if os.path.exists(element.get_url()):
             element.delete()
 
 
-def movefile(activefiles):
+def move_file(active_files):
 
-    listetags = input('How ?')
+    list_tags = input('How ?')
 
     if get_preference('Default folder'):
-        foldest = get_preference('Default folder')
+        folder_destination = get_preference('Default folder')
 
     else:
-        foldest = input('Destination:')
+        folder_destination = input('Destination:')
 
-    for element in activefiles:
-         Movefile(element).movefile(foldest, listetags)
+    for element in active_files:
+        Movefile(element).move_file(folder_destination, list_tags)
 
 
-def rename(activefiles,value):
-
-    if len(activefiles)>1:
+def rename(active_files,value):
+    # value nom sans ext
+    if len(active_files) > 1:
         print('Plusieurs fichiers auront le meme nom. Veuillez choisir un ordre de numérotation')
-        for element in activefiles:
-            number=input(element.get_name())
-            val=number+' '+value+'.'+element.get_extension()
+        for element in active_files:
+            number = input(element.get_name())
+            val = value+' '+number+'.'+element.get_extension()
             element.rename(val)
 
 """Options"""
 
 
-def actionhelp():
+def action_help():
     print('---------------')
     print('Write one of these keywords : '
+          '\nfind : '
           '\ndoublon :'
-          '\nmovefile : help you to move one file or more by using tags. You may read the documentation to know whitch tag matches with whitch file.'
-          '\ndelete : delete all files on the screen. '
-          '\nfind : get all files in the specified folder.'
-          '\nshowmeta : get info'
-          '\nchangemeta : change info'
-          '\nexit :  stop the programm'
-          '\ndoc : to see the doc')
+          '\nmove_file : '
+          '\ndelete : '
+          '\nshowmeta :'
+          '\nchangemeta :'
+          '\nexit :'
+          '\ndoc : ')
     print('---------------')
 
 
 def set_preference():
-    with open('preference.txt', 'rb') as docprefread:
-        dict = docprefread.read().decode('utf-8')
-    dict = ast.literal_eval(dict)
-    for element in dict.keys():
-        pref=input(element+':')
-        dict[element] = pref
-    with open('preference.txt', 'wb') as docprefwrite:
-        dicstr = json.dumps(dict).encode('utf-8')
-        docprefwrite.write(bytes(dicstr))
+    with open('preference.txt', 'rb') as doc_read:
+        dic = doc_read.read().decode('utf-8')
+    dic = ast.literal_eval(dic)
+    for element in dic.keys():
+        pref = input(element+':')
+        dic[element] = pref
+    with open('preference.txt', 'wb') as doc_write:
+        dic_str = json.dumps(dic).encode('utf-8')
+        doc_write.write(bytes(dic_str))
 
 
 def get_preference(pref):
-    with open('preference.txt', 'rb') as docpref:
-        dict = ast.literal_eval(docpref.read().decode('utf-8'))
-        if dict[pref] == "":
+    with open('preference.txt', 'rb') as doc:
+        dic = ast.literal_eval(doc.read().decode('utf-8'))
+        if dic[pref] == "":
             return
         else:
-            return dict[pref]
+            return dic[pref]
 
 
 """Metadata"""
 
 
-def show_meta(activefiles):
-
-    for element in activefiles:
-        print ('File name:',element.get_name())
+def show_meta(active_files):
+    for element in active_files:
+        print('File name:', element.get_name())
         for item in element.get_alltag():
-            print(item[0],'|',item[1],'||',end='')
+            print(item[0], '|', item[1], '||', end='')
         print('')
         print('---------------')
 
 
-def change_meta(activefiles):
+def change_meta(active_files):
     print('Write "Stop" to interrupt the process')
-
-    for element in activefiles:
+    for element in active_files:
         for item in element.get_tagkeys():
             value=element.get_tag(item)
-            tagvalue=input(element.get_name()+' '+item+' value :'+str(value)+'. Change in :')
+            tagvalue = input(element.get_name()+' '+item+' value :'+str(value)+'. Change in :')
             if tagvalue == 'stop':
                 print('Fin')
                 return
-            element.change_tag(item,tagvalue)
+            element.change_tag(item, tagvalue)
 
 
-def update(activefiles):
-    for element in activefiles:
-        Devine(element).update_arc()
+def music_print(active_files):
+    result_list = []
+    for element in active_files:
+        result_list.append((element, Devine(element).music_print(), 'music_print'))
+    return result_list
+
+
+def movie_tag(active_files):
+    result = []
+    for element in active_files:
+        result.append(Devine(element).movie_tag())
+    return result
+
+
+def update_meta(update_list):
+
+    for element in update_list:
+        Devine(element[0]).update_tag(element[1], element[2])
 
 
 def main():
-    """
-    url=r'C:\Users\Jack\Music\arctestmp3'
-    profondeur='1'
-    foldest=r'C:\Users\Jack\Music\destarctestmp3'
-    listetags='artists,album'
 
-    activefiles=find(url,profondeur)
-    #update(activefiles)
-    movefile(activefiles,listetags,foldest)
-    """
-
-    action=''
-    activefiles = find()
-    actionhelp()
+    action = ''
+    active_files = find()
+    action_help()
+    update_list = []
     while action != 'exit':
 
         action = input('action:')
 
         if action == 'find':
-            activefiles = find()
+            active_files = find()
 
         elif action == 'doublon':
-            activefiles = doublon(activefiles)
+            active_files = doublon(active_files)
 
         elif action == 'byattri':
-            activefiles=byattribute(activefiles)
+            active_files = byattribute(active_files)
 
         elif action == 'bysize':
-            activefiles = bysize(activefiles)
+            active_files = bysize(active_files)
 
         elif action == 'byname':
-            value=input('value: ')
-            activefiles = byname(activefiles,value)
+            value = input('value: ')
+            active_files = byname(active_files, value)
 
-        elif action == 'movefile':
-            movefile(activefiles)
+        elif action == 'move_file':
+            move_file(active_files)
 
         elif action == 'delete':
-            delete(activefiles)
+            delete(active_files)
 
         elif action == 'showmeta':
-            show_meta(activefiles)
+            show_meta(active_files)
 
         elif action == 'changemeta':
-            change_meta(activefiles)
+            change_meta(active_files)
 
-        elif action == 'update':
-            update(activefiles)
+        elif action == 'music_print':
+            update_list = music_print(active_files)
+
+        elif action == 'updatemeta':
+            if len(update_list) > 0:
+                update_meta(update_list)
+            else:
+                print("Rien a mettre à jour")
 
         elif action == 'help':
-             actionhelp()
+             action_help()
 
-        elif action== 'doc':
+        elif action == 'doc':
             os.startfile('info.txt')
+
+        elif action == 'activelist':
+            print(len(active_files), 'fichiers')
+            if len(active_files) > 0:
+                for element in active_files:
+                    print(element.get_url())
 
     print('fin du game')
 

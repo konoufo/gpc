@@ -2,7 +2,6 @@
 
 class Traducteur():
 
-
     def __init__(self,ext):
         self.ext=ext
 
@@ -11,16 +10,16 @@ class Traducteur():
 
             text = text.read().replace('\n', '')
             text = text.replace('sym','©')
-            traducteur =text.split(';;')
+            traducteur = text.split(';;')
 
-        listetrad = []
+        list_trad = []
 
         for element in traducteur:
             el = element.split(';')
-            listetrad.append(el)
-        for element in listetrad:
+            list_trad.append(el)
+        for element in list_trad:
             if element[0] == self.ext.lower():
-                if element[1]==tag:
+                if element[1] == tag:
                     return str(element[2])
 
     def accept_tag(self):
@@ -29,10 +28,10 @@ class Traducteur():
             text = text.replace('sym', '©')
             text = text.split(';;')
 
-        listetag=[]
+        list_tag = []
         for element in text:
-            el=element.split(';')
-            if el[0]==self.ext:
-                listetag.append(el[1])
-        return listetag
+            el = element.split(';')
+            if el[0] == self.ext:
+                list_tag.append(el[1])
+        return list_tag
 
