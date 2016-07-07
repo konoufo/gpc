@@ -12,7 +12,7 @@ from pymediainfo import MediaInfo
 from traducteur import Traducteur
 
 
-class Fichier:
+class Megafile:
 
     def __init__(self, url):
         self.url = url
@@ -20,8 +20,8 @@ class Fichier:
     def get_types(self):
 
         with open('ext.txt', 'rb') as text:
-            extlist = text.read().decode('utf-8').replace('\n', '').split(';;')
-        for element in extlist:
+            ext_list = text.read().decode('utf-8').replace('\n', '').split(';;')
+        for element in ext_list:
             if element.split(';')[0] == self.get_extension():
                 extension = element.split(';')[0]
                 soustype = element.split(';')[1]
@@ -32,19 +32,22 @@ class Fichier:
     def get_extension(self):
         return self.url.split('.')[-1].lower()
     
-    def issame(self, fichiercmp):
-        return filecmp.cmp(self.url, fichiercmp)
+    def issame(self, file_cmp):
+        return filecmp.cmp(self.url, file_cmp)
 
-    def rename(self, newname):
-        fold=os.path.dirname(self.url)
-        dest=os.path.join(fold,newname)
+    def rename(self, new_name):
+        src_folder = os.path.dirname(self.url)
+        dest = os.path.join(src_folder,new_name)
         if os.path.exists(dest):
             print('Erreur. Le fichier existe déjà')
         else:
-            shutil.move(self.url,dest )
+            shutil.move(self.url, dest)
 
     def delete(self):
-        os.remove(self.url)
+        try:
+            os.remove(self.url)
+        except PermissionError as e:
+            print(e)
 
     def get_name(self):
         return os.path.basename(self.url)
@@ -58,21 +61,21 @@ class Fichier:
             try:
                 return self.get_types()[2]
             except TypeError:
-                print('TypeError',self.url)
+                print('TypeError', self.url)
                 pass
 
         elif tag == 'st':
             try:
                 return self.get_types()[1]
             except TypeError:
-                print('TypeError',self.url)
+                print('TypeError', self.url)
                 pass
 
-        elif tag == 'contructor':
+        elif tag == 'constructor':
             try:
                 return self.get_types()[3]
             except TypeError:
-                print('TypeError',self.url)
+                print('TypeError', self.url)
                 pass
 
         elif tag == 'ext':
@@ -82,7 +85,6 @@ class Fichier:
             return os.path.getsize(self.url)
 
         else:
-
             tag = Traducteur(self.get_extension()).get_trad(tag)
             if self.get_extension() == 'mp3':
                 try:
@@ -90,13 +92,13 @@ class Fichier:
                     file = EasyID3(self.url)
                     return file.get(tag)
                 except AttributeError as e:
-                    print('AttributeError: ', e )
+                    print(e)
                     pass
                 except PermissionError as e:
-                    print('Permissionerror: ', e)
+                    print(e)
                     pass
                 except mutagen.id3._util.ID3NoHeaderError as e:
-                    print('mutagenerror: ', e)
+                    print(e)
                     pass
 
             elif self.get_extension() == 'mp4':
@@ -104,7 +106,7 @@ class Fichier:
                     file = mp4.Open(self.url)
                     return file.get(tag)
                 except mutagen.mp4.MP4StreamInfoError:
-                    print('mutagen.mp4.MP4StreamInfoError',self.url)
+                    print('mutagen.mp4.MP4StreamInfoError', self.url)
                     pass
 
             elif self.get_extension() == 'wmv':
@@ -135,7 +137,7 @@ class Fichier:
                 file = EasyID3(self.url)
                 file[tag] = tagvalue
                 file.save()
-            except (mutagen.id3._util.ID3NoHeaderError,PermissionError) as e:
+            except (mutagen.id3._util.ID3NoHeaderError, PermissionError) as e:
                 print(e)
                 return
 
@@ -182,20 +184,20 @@ class Fichier:
     """
 
     def get_alltag(self):
-        listetag=[]
+        result = []
         for element in Traducteur(self.get_extension()).accept_tag():
-            listetag.append((element,self.get_tag(element)))
-        return listetag
+            result.append((element, self.get_tag(element)))
+        return result
 
     def get_tagkeys(self):
-        listetag = []
+        result = []
         for element in Traducteur(self.get_extension()).accept_tag():
-            listetag.append(element)
-        return listetag
+            result.append(element)
+        return result
 
     def isaccepted(self):
         with open('ext.txt','rb') as text:
-            extlist=text.read().decode('utf-8').replace('\n','').split(';;')
-        for element in extlist:
-            if element.split(';')[0]==self.get_extension():
+            ext_list = text.read().decode('utf-8').replace('\n', '').split(';;')
+        for element in ext_list:
+            if element.split(';')[0] == self.get_extension():
                 return True
