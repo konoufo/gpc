@@ -1,3 +1,4 @@
+# WTF import !
 import requests,ast,json,xmltodict
 from acrcloud.recognizer import ACRCloudRecognizer
 
@@ -5,6 +6,9 @@ from acrcloud.recognizer import ACRCloudRecognizer
 class Devine:
 
     def __init__(self, megafile):
+        """
+        :param: me
+        """
         self.megafile = megafile
 
     def book_tag(self, param):
@@ -38,7 +42,6 @@ class Devine:
                 dic2 = ast.literal_eval(requests.get(link).text)
                 if dic2['Response'] == 'True':
                     return dic2
-
                 else:
                     t = self.megafile.get_name().split('.')[0:-1]
                     link = link + '&t=' + ''.join(t) + '&y=' + y
@@ -77,25 +80,27 @@ class Devine:
 
         if genre == 'music_print':
             """tag:'artists', 'album', 'title', 'genres'"""
-            if dic:
+            try:
                 c = dic['metadata']['music'][0]
-                for element in dic:
-                    try:
-                        tagvalue = c[element]
-                        liste1 = []
-                        if type(tagvalue) is list:
-                            for item in tagvalue:
-                                liste1.append(item['name'])
-                            newtag = '&'.join(liste1)
-                            self.megafile.change_tag(element, newtag)
-                        elif type(tagvalue) is str:
-                            self.megafile.change_tag(element, tagvalue)
-                        elif type(tagvalue) is dict:
-                            self.megafile.change_tag(element, tagvalue['name'])
-                    except KeyError:
-                        continue
+            except KeyError:
+                return None
+            for element in dic:
+                try:
+                    tagvalue = c[element]
+                    liste1 = []
+                    if type(tagvalue) is list:
+                        for item in tagvalue:
+                            liste1.append(item['name'])
+                        newtag = '&'.join(liste1)
+                        self.megafile.change_tag(element, newtag)
+                    elif type(tagvalue) is str:
+                        self.megafile.change_tag(element, tagvalue)
+                    elif type(tagvalue) is dict:
+                        self.megafile.change_tag(element, tagvalue['name'])
+                except KeyError:
+                    continue
 
-        if genre == 'movie':
+        elif genre == 'movie':
             if 'Genre' in dic.keys():
                 self.megafile.change_tag('genre',dic['Genre'])
             if 'Title' in dic.keys():

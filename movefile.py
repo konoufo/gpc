@@ -26,8 +26,8 @@ class Movefile:
                 print('Valeur spécifiée non reconnue. Un dossier correspondant -unknown- sera crée')
                 list_tag.append('unknown {}'.format(element))
                 continue
-
-        dir_dest = os.path.join(dir_selected, *list_tag, os.path.basename(self.megafile.get_url()))
+        subfolders = list_tag + [os.path.basename(self.megafile.get_url())]
+        dir_dest = os.path.join(dir_selected, *subfolders)
 
         try:
             dir_dest = copie(dir_dest)
@@ -41,7 +41,7 @@ def copie(url):
     i = 1
     if os.path.exists(url):
         url = url.split('.')
-        url = ''.join(url[0:-1])+'{}'.format(i)+url[-1]
+        url = '{url_no_ext}{id_num}.{ext}'.format(''.join(url[0:-1]), i, url[-1])
         i += 1
         copie(url)
     else:

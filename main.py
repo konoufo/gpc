@@ -1,3 +1,4 @@
+# -:- coding: utf-8 -:-
 import os, re
 from finder import Finder
 from movefile import Movefile
@@ -46,7 +47,7 @@ def doublon(active_files):
 
     return result
 
-
+# todo: rename functions match_by_name, match_by_size and so on
 def byname(active_files, value):
     text = value.lower()
     text = text.split(' ')
