@@ -20,16 +20,18 @@ class Devine:
         for item in dic['GoodreadsResponse']['search']['results']['work']:
             result.append((item['best_book']['title'], item['best_book']['author']['name']))
         return result
-
+    
+    # todo: use json.load instead of ast.literal_eval
     def movie_tag(self, t=None, y=None):
-
-        # t = title, y=year
+        # :args t = title, y=year:
         link = r'http://www.omdbapi.com/?'
+        # y = y or ''
         if not y:
             y = ''
+        # t = t or ''
         if not t:
             t = ''
-
+        # use string.format() instead of '+' concatenation
         link = link + '&t=' + t + '&y=' + y
         dic1 = ast.literal_eval(requests.get(link).text)
         if dic1['Response'] == 'True':
@@ -71,6 +73,7 @@ class Devine:
         if dict1['status']['msg'] == 'Success' and dict1['metadata'] and dict1['metadata']['music'][0]:
             return dict1
         else:
+            # make sure to catch IOError
             buf = open(self.megafile.get_url(), 'rb').read()
             dict2 = ast.literal_eval(re.recognize_by_filebuffer(buf, 0))
             if dict2['status']['msg'] == 'Success' and dict2['metadata'] and dict2['metadata']['music'][0]:
