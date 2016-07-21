@@ -1,4 +1,4 @@
-# WTF import !
+# multiline imports for god sake !
 import requests,ast,json,xmltodict
 from acrcloud.recognizer import ACRCloudRecognizer
 
